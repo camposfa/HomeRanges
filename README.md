@@ -3,6 +3,8 @@ HomeRanges
 
 This repository contains R source files used for analyzing white-faced capuchin home ranges.
 
+![Picture](http://people.ucalgary.ca/~facampos/images/homerange2.jpg)
+
 The raw data are not posted because I don't own them all.
 
 [Contact me](mailto:camposfa@gmail.com) if you are interested in the data sets referred to in the source files.
