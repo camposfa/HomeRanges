@@ -1,0 +1,78 @@
+Models of home range size and composition
+========================================================
+
+#### Up to [data sets](../index.html)
+#### Back to [home range calculation](HomeRanges.html)
+----
+Source files available on [Github](https://github.com/camposfa/HomeRanges)
+
+[Contact me](mailto:camposfa@gmail.com) if you are interested in the raw data
+
+
+```{r echo=FALSE}
+opts_chunk$set(fig.path = 'figure/models/', 
+               fig.height = 6, 
+               fig.width = 12, 
+               tidy = FALSE, 
+               warning = FALSE,
+               cache = TRUE)
+read_chunk('Models.R')
+```
+
+<br>
+## Prepare workspace
+```{r prepare_model_workspace, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Load home range data
+```{r load_hr_data}
+```
+
+<br>
+## Run models for home range area
+```{r area_models}
+```
+
+<br>
+## Clean up model results for plotting
+```{r rename_area_vars}
+```
+
+<br>
+## Plot results for home range area
+```{r plot_area_results}
+```
+
+<br>
+## Run models for home range composition
+```{r ndvi_models}
+```
+
+<br>
+## Clean up model results for plotting
+```{r rename_ndvi_vars}
+```
+
+<br>
+## Plot results for home range composition
+```{r plot_ndvi_results}
+```
+
+<br>
+## Run models comparing home range zones
+```{r zones_model}
+```
+
+<br>
+## Clean up model results for plotting
+```{r rename_zones_vars}
+```
+
+<br>
+## Plot results comparing home range zones
+```{r plot_zones_results, fig.width = 6}
+```
+
+```{r model_cleanup, echo=FALSE, message = FALSE, results = 'hide'}
+```

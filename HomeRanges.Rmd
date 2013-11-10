@@ -1,0 +1,123 @@
+Home Ranges
+========================================================
+
+#### Up to [data sets](../index.html)
+#### Forward to [models](HRModels.html)
+----
+Source files available on [Github](https://github.com/camposfa/HomeRanges)
+
+[Contact me](mailto:camposfa@gmail.com) if you are interested in the raw data
+
+```{r echo=FALSE}
+opts_chunk$set(fig.path = 'figure/', 
+               fig.height = 6, 
+               fig.width = 12, 
+               tidy = FALSE, 
+               warning = FALSE,
+               cache = TRUE)
+read_chunk('HomeRanges.R')
+```
+
+<br>
+## Prepare workspace
+```{r prepare_workspace, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Load data and plot tracks
+```{r load_data}
+```
+
+```{r cleanup_1, echo=FALSE, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Check data and plot researcher contributions
+```{r review_data}
+```
+
+<br>
+## Number of points by group and observer
+```{r plot_contributions2}
+```
+
+<br>
+## Calculate time intervals for each home range
+```{r calculate_intervals}
+```
+
+```{r cleanup_2, echo=FALSE, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Calculate number of locations for each home range
+```{r calculate_num_locs}
+```
+
+<br>
+## Filter out periods with few locations
+```{r apply_num_locs_threshold}
+```
+
+```{r cleanup_3, echo=FALSE, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Plot of seasonal ranges to be included in the study
+```{r plot_times, fig.height = 9}
+```
+
+<br>
+<br>
+
+**********************
+
+# Calculation of predictor variables
+
+<br>
+## Calculate group size within HR intervals
+```{r calculate_group_size}
+```
+
+```{r cleanup_4, echo=FALSE, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Calculate available fruit biomass within HR intervals
+Full details here: http://people.ucalgary.ca/~facampos/data/fruit/
+```{r calculate_fruit}
+```
+
+```{r cleanup_5, echo=FALSE, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Calculate weather data within HR intervals
+Full details here: http://people.ucalgary.ca/~facampos/data/weather/
+```{r calculate_weather}
+```
+
+```{r cleanup_6, echo=FALSE, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Load habitat maps and view
+```{r load_habitat_maps, message = FALSE, results = 'hide'}
+```
+
+<br>
+## Calculate home ranges
+```{r calculate_hr, eval = FALSE}
+```
+
+<br>
+## Write utilization distribution raster images to disk
+```{r write_ud, eval = FALSE}
+```
+
+<br>
+## Write hr data to disk
+```{r write_hr_data, eval = FALSE}
+```
+
+#### Forward to [models](HRModels.html)
