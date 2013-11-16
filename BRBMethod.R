@@ -15,8 +15,8 @@ area.BRB <- function(x = NULL, start.date = NULL, end.date = NULL, hab = NULL, i
 	if(plot.it == TRUE){
 		image(ud.BRB, col = topo.colors(100))
 	}
-	
-	po <- list()
+  
+  po <- list()
   n <- list()
   
 	for(i in 1:length(iso)){
