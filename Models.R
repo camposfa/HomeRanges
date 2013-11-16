@@ -1,4 +1,4 @@
-# ---- prepare_model_workspace -------------------------------------------------------
+# ---- prepare_model_workspace --------------------------------------------
 
 Sys.setenv(TZ='UTC')
 x <- list("lme4", 
