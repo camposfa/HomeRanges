@@ -20,15 +20,17 @@ area.BRB <- function(x = NULL, start.date = NULL, end.date = NULL, hab = NULL, i
   n <- list()
   
 	for(i in 1:length(iso)){
-		
+    
     # polygons
     po[[paste("hr", iso[i], sep = "")]] <- getverticeshr(ud.BRB, 
                                                          percent = iso[i])
 		
+    
     proj4string(po[[i]]) <- CRS("+proj=utm +zone=16 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
     
     # ndvi
-		n[[paste("ndvi", iso[i], sep = "")]] <- mean(ndvi[po[[i]], drop = TRUE]$ndvi, 
+    
+    n[[paste("ndvi", iso[i], sep = "")]] <- mean(ndvi[po[[i]], drop = TRUE]$ndvi, 
                                                  na.rm=TRUE)
 	}
   
