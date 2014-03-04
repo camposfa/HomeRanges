@@ -4,7 +4,7 @@ HomeRanges
 This repository contains R source files used for analyzing white-faced capuchin home ranges.
 
 
->Campos, F.A., Bergstrom, M.L., Childers, A., Hogan, J.D., Jack, K.M., Melin, A.D., Mosdossy K.N., Myers, M.S., Parr, N.A., Sargeant, E., Schoof, V.A.M., and Fedigan, L.M. (_in press_). Drivers of home range characteristics across spatiotemporal scales in a neotropical primate, Cebus capucinus. _Animal Behaviour_.
+>Campos, F.A., Bergstrom, M.L., Childers, A., Hogan, J.D., Jack, K.M., Melin, A.D., Mosdossy K.N., Myers, M.S., Parr, N.A., Sargeant, E., Schoof, V.A.M., and Fedigan, L.M. (_in press_). Drivers of home range characteristics across spatiotemporal scales in a neotropical primate, _Cebus capucinus_. _Animal Behaviour_.
 
 ![Picture](http://people.ucalgary.ca/~facampos/images/homerange2.jpg)
 
