@@ -2,19 +2,20 @@
 # ---- prepare_workspace -------------------------------------------------------
 
 Sys.setenv(TZ='UTC')
-x <- list("adehabitatHR", 
-          "plyr", 
-          "lubridate", 
-          "scales", 
-          "reshape2",  
-          "ggplot2",
-          "RColorBrewer",
-          "rgdal",
-          "gridExtra",
-          "rgeos")
-lapply(x, require, character.only = T)
+list.of.packages <- list("adehabitatHR", "plyr", "lubridate", "scales", 
+                         "reshape2", "ggplot2", "RColorBrewer", "rgdal", 
+                         "gridExtra", "rgeos", "colorspace")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(unlist(new.packages))
+lapply(list.of.packages, require, character.only = T)
  
 source("BRBMethod.R")
+
+# Create HCL color palette for land cover maps
+lc_grad <- colorRampPalette(colors = rev(heat_hcl(4, h = c(130, 70), 
+                                                  c = c(80, 30), 
+                                                  l = c(45, 95), 
+                                                  power = c(1/5, 2))))(4)
 
 
 # ---- load_data ---------------------------------------------------------------
@@ -36,21 +37,7 @@ rm(all)
 gc()
 
 
-# ---- review_data -------------------------------------------------------------
-
-# Warning: next line is very slow!
-# It may totally cripple your computer for an hour or more!
-
-# temp <- cutltraj(ran, "dt > 5400")
-# plot(temp, addpoints=FALSE, final=FALSE)
-# 
-# temp_df <- ld(temp)
-# temp_df$velocity <- (temp_df$dist / 1000) / (temp_df$dt / 3600)
-
-# If all okay then clean up workspce
-# rm(temp)
-# rm(temp_df)
-# gc()
+# ---- review_data --------------------------------------------------------
 
 # Convert to data frame
 ran_df <- ld(ran)
@@ -60,7 +47,7 @@ date_begin <- min(ran_df$date_of)
 date_end <- max(ran_df$date_of)
 
 # Plot contributions
-temp <- ddply(ran_df, .(id, observer, date_of), summarize, n_pts = length(x))
+temp <- ddply(ran_df, .(id, observer, date_of), summarise, n_pts = length(x))
 temp[temp$n_pts == 28, ]$n_pts <- 26
 temp[temp$n_pts == 27, ]$n_pts <- 26
 
@@ -107,6 +94,7 @@ ggplot(ran_df, aes(x = observer, fill = observer)) +
   theme(legend.position = "bottom") + 
   stat_summary(aes(y = 500), fun.data = give.n, geom = "text", color = "black", size = 4) + 
   labs(x = "Group", y = "Number of Points")
+
 
 # ---- calculate_intervals -----------------------------------------------------
 
@@ -237,7 +225,7 @@ gc()
 date_begin <- min(int_start(ob$ints))
 date_end <- max(int_end(ob$ints))
 
-temp <- ddply(ran_df, .(id, date_of), summarize, n_pts = length(x))
+temp <- ddply(ran_df, .(id, date_of), summarise, n_pts = length(x))
 temp[temp$n_pts == 28, ]$n_pts <- 26
 temp[temp$n_pts == 27, ]$n_pts <- 26
 
@@ -446,6 +434,125 @@ ggplot(final_comps, aes(x = date_of, y = adult_mass, color = id)) +
   facet_grid(. ~ id)
 
 
+
+# ---- calculate_num_juvs -------------------------------------------------
+
+groups <- read.csv("groups_query.csv")
+
+# Include only alive or immigrated animals
+tcomp <- subset(groups, status == "Alive" | status == "Immigrated")
+
+# Include only sexually mature animals
+comp <- subset(tcomp, age == "Infant" | age == "LgImmature" | age == "SmImmature")
+
+# Inlcude only study group
+comp <- subset(comp, id %in% c("AD", "BH", "CP", "EX", "GN", "LV", "RM"))
+
+comp$id <- factor(comp$id)
+comp$status <- factor(comp$status)
+comp$sex <- factor(comp$sex)
+comp$age <- factor(comp$age)
+comp$date_of <- as.Date(comp$date_of)
+
+# Round to set census date
+comp$census_date <- round_date(comp$date_of, unit = "month")
+
+# Drop unnecessary columns
+comp <- comp[, c(1, 2, 7, 5, 6)]
+
+# Reshape
+comp_wide <- dcast(comp, id + date_of ~ age, 
+                   value.var = "n", 
+                   fun.aggregate = sum, 
+                   drop = TRUE, 
+                   fill = 0)
+
+# Empty data frame for final composition data
+final_juv_comps <- NULL
+
+# Define limits, pull group comp data for each group, and interpolate values
+for (i in 1:length(levels(comp_wide$id)))
+{
+  # Make temporary subsets
+  temp_ob <- subset(ob, id == levels(comp_wide$id)[i])
+  temp_comp <- subset(comp_wide, id == levels(comp_wide$id)[i])
+  
+  # Find date limits
+  date_begin <- floor_date(min(int_start(temp_ob$ints)), unit = "month")
+  date_end <- ceiling_date(max(int_end(temp_ob$ints)), unit = "month")  
+  
+  # Generate even sequence of first-of-month dates
+  date_seq <- as.Date(seq(date_begin, date_end, "days"))
+  
+  # Create daily data frame for composition values
+  comp_frame <- data.frame(id = levels(comp_wide$id)[i],
+                           census_date = date_seq,
+                           Infant = NA,
+                           LgImmature = NA,
+                           SmImmature = NA)
+  
+  # Fill in census dates with actual information
+  comp_frame$Infant <- temp_comp[match(comp_frame$census_date, 
+                                        temp_comp$date_of), ]$Infant
+  comp_frame$SmImmature <- temp_comp[match(comp_frame$census_date, 
+                                           temp_comp$date_of), ]$SmImmature
+  comp_frame$LgImmature <- temp_comp[match(comp_frame$census_date, 
+                                           temp_comp$date_of), ]$LgImmature
+  
+  # Interpolate between census dates for each day
+  comp_frame$s_Infant <- approx(x = comp_frame$census_date,
+                                 y = comp_frame$Infant,
+                                 n = nrow(comp_frame),
+                                 method = "constant")$y
+  
+  comp_frame$s_SmImmature <- approx(x = comp_frame$census_date,
+                                    y = comp_frame$SmImmature,
+                                    n = nrow(comp_frame),
+                                    method = "constant")$y
+  
+  comp_frame$s_LgImmature <- approx(x = comp_frame$census_date,
+                                    y = comp_frame$LgImmature,
+                                    n = nrow(comp_frame),
+                                    method = "constant")$y
+  
+  comp_frame <- comp_frame[, c(1, 2, 6:8)]
+  
+  final_juv_comps <- rbind(final_juv_comps, comp_frame)
+}
+
+# Fix names
+names(final_juv_comps) <- c("id", "date_of", "n_inf", "n_sim", "n_lim")
+final_juv_comps$date_of <- as.POSIXct(final_juv_comps$date_of)
+
+# Calculate mean adult mass values for each HR interval
+ob$num_imm <- 0
+ob$num_inf <- 0
+ob$num_sim <- 0
+ob$num_small <- 0
+
+for(i in 1:nrow(ob)){
+  g1 <- mean(final_juv_comps[which(final_juv_comps$date_of %within% 
+                                     ob[i,]$ints & 
+                                     final_juv_comps$id==ob[i, ]$id), ]$n_inf)
+  g2 <- mean(final_juv_comps[which(final_juv_comps$date_of %within% 
+                                     ob[i,]$ints & 
+                                     final_juv_comps$id==ob[i, ]$id), ]$n_sim)
+  g3 <- mean(final_juv_comps[which(final_juv_comps$date_of %within% 
+                                     ob[i,]$ints & 
+                                     final_juv_comps$id==ob[i, ]$id), ]$n_lim)
+  
+  ob[i, ]$num_imm <- g1 + g2 + g3
+  ob[i, ]$num_inf <- g1
+  ob[i, ]$num_sim <- g2
+  ob[i, ]$num_small <- g1 + g2
+}
+
+ob$num_imm_s <- scale(ob$num_imm)
+ob$num_inf_s <- scale(ob$num_inf)
+ob$num_sim_s <- scale(ob$num_sim)
+ob$num_small_s <- scale(ob$num_small)
+
+
 # ---- cleanup_4 ---------------------------------------------------------------
 # Clean up
 rm(g1)
@@ -571,11 +678,11 @@ gc()
 
 # ---- load_habitat_maps -------------------------------------------------------
 
-lc <- readGDAL(fname = "C:/Users/Fernando/Dropbox/AnalysisPhD/Spatial/raster/LandCover/LS_2011_LC.tif")
+lc <- readGDAL(fname = "LC_2011-03-06.tif")
 fullgrid(lc) <- FALSE
 names(lc) <- "habitat"
 
-ndvi <- readGDAL(fname = "C:/Users/Fernando/Dropbox/AnalysisPhD/Spatial/raster/LandCover/LS_2011_NDVI.tif")
+ndvi <- readGDAL(fname = "NDVI_2011-03-06.tif")
 fullgrid(ndvi) <- FALSE
 names(ndvi) <- "ndvi"
 
@@ -602,7 +709,8 @@ proj4string(clip_rect) <- CRS("+proj=utm +zone=16 +datum=WGS84 +units=m +no_defs
 hab <- lc[clip_rect, drop = TRUE]
 age <- ndvi[clip_rect, drop = TRUE]
 
-image(hab, col = brewer.pal(4, "YlGn"))
+# image(hab, col = brewer.pal(4, "YlGn"))
+image(hab, col = lc_grad)
 
 
 # ---- calculate_hr ------------------------------------------------------------
@@ -712,6 +820,154 @@ rm(subDir1)
 rm(subDir2)
 rm(ud)
 gc()
+
+
+# ---- plot_all_tracks ----------------------------------------------------
+
+library(rasterVis)
+library(ggthemes)
+
+# Warning: next line is very slow if you don't have much RAM!
+# It's okay with 16 GB RAM, quad-core i7 (~4 minutes)
+# With 4 GB or less, it may cripple your computer for an hour or more!
+temp <- cutltraj(ran, "dt > 5400")
+
+# Plot using adehabitat's function
+# plot(temp, addpoints=FALSE, final=FALSE, spixdf = hab, 
+#      colspixdf = lc_grad, xlim = attr(hab,"bbox")["x", ], 
+#      ylim = attr(hab,"bbox")["y", ])
+
+# Plot using rasterVis wrapper for ggplot2
+temp_df <- ld(temp)
+
+lc_rat <- function(x = NULL){
+  lc_r <- ratify(x)
+  rat <- levels(lc_r)[[1]]
+  rat$habitat <- c('Open', 'Early', 
+                   'Intermediate', 'Late')
+  levels(lc_r) <- rat
+  return(lc_r)
+}
+
+# Create raster stack
+hab_list <- rep(list(raster(hab)), 7)
+temp3 <- llply(hab_list, function(x) lc_rat(x))
+hab_stack <- stack(temp3)
+names(hab_stack) <- levels(ran_df$id)
+
+# Plot
+gplot(hab_stack) + 
+  geom_raster(aes(fill = factor(value))) +
+  geom_path(data = temp_df, aes(x = x, y = y, group = burst), 
+            color = "black", alpha = 0.35) +   
+  facet_wrap(~ id, ncol = 4) +
+  scale_fill_manual(name = "Habitat", values = lc_grad, 
+                    labels = c("Open", "Early", "Intermediate", "Late")) + 
+  coord_equal() + 
+  theme_few() + 
+  theme(legend.position = "bottom", legend.key.width = unit(1, "cm"), 
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(), 
+        axis.ticks = element_blank()) +
+  labs(x = "", y = "")
+
+# If all okay then clean up workspce
+# rm(temp)
+# rm(temp_df)
+# gc()
+
+
+# ---- plot_all_total_hr --------------------------------------------------
+
+library(rasterVis)
+library(ggthemes)
+
+lc_rat <- function(x = NULL){
+  lc_r <- ratify(x)
+  rat <- levels(lc_r)[[1]]
+  rat$habitat <- c('Open', 'Early', 
+                   'Intermediate', 'Late')
+  levels(lc_r) <- rat
+  return(lc_r)
+}
+
+# Create raster stack
+hab_list <- rep(list(raster(hab)), 7)
+temp3 <- llply(hab_list, function(x) lc_rat(x))
+hab_stack <- stack(temp3)
+names(hab_stack) <- levels(ran_df$id)
+
+total_hr <- list()
+ud <- list()
+
+for(i in 1:7){
+  temp <- suppressWarnings(area.BRB(
+    x = ran[id = levels(ran_df$id)[i]],
+    start.date = as.POSIXct(as.Date("2000-01-01")), 
+    end.date = as.POSIXct(as.Date("2014-01-01") + days(1)), 
+    hab = hab,    
+    iso = c(50, 70, 95),
+    t = "UD",
+    vv = vv[[i]]))
+  
+  total_hr[[i]] <- temp$hr$hr95
+  ud[[i]] <- temp$ud
+}
+
+hr_polys <- NULL
+
+for(i in 1:7){
+  temp <- fortify(total_hr[[i]])
+  temp$id <- as.character(levels(ran_df$id)[i])
+  hr_polys <- rbind(hr_polys, temp)
+}
+
+hr_polys$group <- paste(as.character(hr_polys$group), ",", as.character(hr_polys$id), sep = "")
+
+gplot(hab_stack) + 
+  geom_raster(aes(fill = factor(value))) +  
+  geom_polygon(data = hr_polys, 
+               aes(x = long, y = lat, group = group, fill = NA),
+               color = "black") +
+  facet_wrap(~ id, ncol = 4) +
+  scale_fill_manual(name = "Habitat", values = lc_grad, 
+                    labels = c("Open", "Early", "Intermediate", "Late")) + 
+  coord_equal() + 
+  theme_few() + 
+  theme(legend.position = "bottom", legend.key.width = unit(1, "cm"), 
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(), 
+        axis.ticks = element_blank()) +
+  labs(x = "", y = "")
+
+
+# ---- overlap ------------------------------------------------------------
+
+d <- NULL
+
+for(i in 1:7){  
+  udi <- ud[[i]]
+  fullgrid(ud1) <- FALSE
+  names(udi) <- levels(ran_df$id)[i]
+  if(is.null(d)) {
+    d <- udi
+  }
+  else {
+    d@data <- cbind(d@data, udi@data)
+  }
+}
+re <- lapply(1:ncol(d), function(i) {
+  so <- new("estUD", d[,i])
+  so@h <- list(h=0, meth="specified") # fake value
+  so@vol <- FALSE
+  return(so)
+})
+names(re) <- names(d)
+class(re) <- "estUDm"
+
+overlap_single <- kerneloverlaphr(re, method = "HR", 
+                                  conditional = TRUE, percent = 95)
+overlap_single
 
 
 # ---- extra -------------------------------------------------------------------

@@ -3,7 +3,7 @@ Home Ranges
 
 #### Up to [data sets](../index.html)
 #### Forward to [models](HRModels.html)
-----
+-------
 Source files available on [Github](https://github.com/camposfa/HomeRanges)
 
 [Contact me](mailto:camposfa@gmail.com) if you are interested in the raw data

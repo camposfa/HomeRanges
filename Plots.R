@@ -101,19 +101,19 @@ give.n <- function(x){
 ggplot(zones, aes(x = variable, y = value, fill = variable)) + 
   geom_boxplot() + 
   theme_bw() + 
-  facet_grid(. ~ block_type) + 
+  facet_grid(id ~ block_type) + 
   labs(x = "", y = "Area (ha)") + 
   guides(fill = guide_legend(title = "Range Zone")) + 
   scale_fill_brewer(palette = "Reds") + 
   stat_summary(fun.data = give.n, geom = "text", color = "black", size = 4) + 
   theme(legend.position = "bottom")
 
-ggplot(zones, aes(x = block_type, y = value, fill = block_type)) + 
-  geom_boxplot() + 
-  theme_bw() + 
+ggplot(zones, aes(x = block_type, y = value)) + 
+  geom_boxplot(fill = "gray80") + 
+  theme_excel() + 
   facet_grid(. ~ variable) + 
   labs(x = "", y = "Area (ha)") +  
-  scale_fill_brewer(palette = "Reds", guide = "none") + 
+#   scale_fill_brewer(palette = "Reds", guide = "none") + 
   stat_summary(fun.data = give.n, geom = "text", color = "black", size = 4) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -246,14 +246,16 @@ zones$variable <- factor(revalue(zones$variable,
                                     "High"))
 
 # Figure 5
-ggplot(zones, aes(x = variable, y = value, fill = variable)) + 
+ggplot(zones, aes(x = variable, y = value)) + 
   geom_line(aes(group = rowid), color = "black", alpha = 0.2) + 
   geom_point(color = "black", alpha = 0.8, show_guide = FALSE) + 
-  geom_boxplot(outlier.shape = NA,alpha = 0.8) + 
+  geom_boxplot(fill = "white", outlier.shape = NA, 
+               alpha = 0.8, width = 0.6) + 
   theme_bw() + 
   facet_grid(. ~ block_type) + 
-  labs(y = "Forest Age Index", x = "") + 
-  scale_fill_brewer(name = "Usage Intensity", palette = "Reds") + 
+  labs(y = "Forest Age Index", x = "Usage Intensity") + 
+  scale_fill_brewer(name = "Usage Intensity", palette = "Reds", 
+                    guide = "none") + 
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), 
         legend.position = "bottom")
@@ -302,20 +304,19 @@ zones <- subset(zones, block_type == "Monthly")
 zones$month <- factor(zones$month, levels = month.abb)
 
 p1 <- ggplot(subset(zones, variable == "Primary"), 
-             aes(x = month, y = value, fill = month)) + 
-  geom_boxplot() + 
-  theme_bw() + 
-  labs(x = "Month", y = "Primary Ranging Area (ha)") + 
-  scale_fill_discrete(guide = "none") +
+             aes(x = month, y = value)) + 
+  geom_boxplot(fill = "gray60") + 
+  theme_few() + 
+  labs(x = "", y = "Primary Ranging Area (ha)") + 
+#   scale_fill_discrete(guide = "none") +
   stat_summary(fun.data = give.n, geom = "text", color = "black", size = 4)
 
 p2 <- ggplot() + 
   geom_bar(data = biomass, aes(x = date_of, 
-                               y = combined_monthly_kg,
-                               fill = month_of), 
-           #            fill = "gray40"
+                               y = combined_monthly_kg), 
+           fill = "gray60",
            stat = "identity",
-           color = "black") +
+           color = "black", width = period_to_seconds(days(20))) +
   geom_point(data = biomass_daily, 
              aes(x = date_of, 
                  y = spline), 
@@ -323,14 +324,14 @@ p2 <- ggplot() +
   geom_point(data = subset(biomass_daily, day(date_of) == 1),
              aes(x = date_of, 
                  y = spline),
-             color = "red") +
+             color = "white") +
   scale_x_datetime(breaks = date_breaks("1 months"), 
                    labels = date_format("%b"), 
                    limits = c(as.POSIXct("2011-01-01"), 
                               as.POSIXct("2011-12-01"))) +
-  theme_bw() +
-  scale_fill_discrete(guide = "none") +
-  labs(x = "Month", y = "Available fruit biomass (kg / ha)")
+  theme_few() +
+#   scale_fill_discrete(guide = "none") +
+  labs(x = "", y = "Available fruit biomass (kg / ha)")
 
 wea <- read.csv("../Weather/filledfiltered_weather.csv")
 wea$date_of <- ymd(as.character(wea$date_of))
@@ -340,11 +341,11 @@ temp$mon <- factor(month(temp$date_of))
 levels(temp$mon) <- month.abb
 
 p3 <- ggplot(temp, aes(x = mon, y = tmax)) + 
-  geom_violin(aes(fill = mon), trim = FALSE, scale = "width", width = 0.7) + 
-  geom_boxplot(fill = NA, color = "black", width = 0.4, outlier.shape = NA) + 
-  scale_fill_discrete(guide = "none") +
+  geom_violin(fill = "gray60", trim = FALSE, scale = "width", width = 0.7) + 
+  geom_boxplot(fill = "white", color = "black", width = 0.4, outlier.shape = NA) + 
+#   scale_fill_discrete(guide = "none") +
   labs(x = "Month", y = "Daily maximum temperature") +
-  theme_bw()
+  theme_few()
 
 grid.arrange(p1, p2, p3, ncol = 1)
 

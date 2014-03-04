@@ -1,17 +1,13 @@
 # ---- prepare_model_workspace --------------------------------------------
 
 Sys.setenv(TZ='UTC')
-x <- list("lme4", 
-          "plyr", 
-          "lubridate", 
-          "scales", 
-          "reshape2",  
-          "ggplot2",
-          "RColorBrewer",
-          "MuMIn",
-          "multcomp",
-          "colorspace")
-lapply(x, require, character.only = T)
+list.of.packages <- list("lme4", "plyr", "lubridate", "scales", "reshape2",  
+                         "ggplot2", "RColorBrewer", "MuMIn", "multcomp",
+                         "colorspace")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(unlist(new.packages))
+lapply(list.of.packages, require, character.only = T)
+
 source('~/R/pairs_panels.R')
 
 
@@ -68,6 +64,8 @@ gc()
 # Not a very elegant solution, but whatevs..
 df_set <- list(mon, qua, hal)
 df_set_names <- c("mon", "qua", "hal")
+# df_set <- list(mon)
+# df_set_names <- c("mon")
 y_set <- c("area_core", "area_primary", "area_total")
 
 # Blank dfs for storing results
@@ -95,6 +93,10 @@ for(i in 1:length(df_set))
                  adult_mass_s + (1|id), 
                REML = FALSE, data=df_set[[i]])
     
+#     m9 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
+#                  num_small_s + (1|id), 
+#                REML = FALSE, data=df_set[[i]])
+    
     m5 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
                  mean_tmax_s + mean_fruit_s + (1|id), 
                REML = FALSE, data=df_set[[i]])
@@ -103,16 +105,46 @@ for(i in 1:length(df_set))
                  mean_tmax_s + adult_mass_s + (1|id), 
                REML = FALSE, data=df_set[[i]])
     
+#     m10 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
+#                   mean_tmax_s + num_small_s + (1|id), 
+#                 REML = FALSE, data=df_set[[i]])
+    
     m7 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
                  mean_fruit_s + adult_mass_s + (1|id), 
                REML = FALSE, data=df_set[[i]])
     
+#     m11 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
+#                  mean_fruit_s + num_small_s + (1|id), 
+#                REML = FALSE, data=df_set[[i]])
+#     
+#     m12 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
+#                  adult_mass_s + num_small_s + (1|id), 
+#                REML = FALSE, data=df_set[[i]])
+    
     m8 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
-                 mean_tmax_s + mean_fruit_s + adult_mass_s + (1|id), 
-               REML = FALSE, data=df_set[[i]])
+                  mean_tmax_s + mean_fruit_s + adult_mass_s + (1|id), 
+                REML = FALSE, data=df_set[[i]])
+    
+#     m13 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
+#                   mean_tmax_s + mean_fruit_s + num_small_s + (1|id), 
+#                 REML = FALSE, data=df_set[[i]])
+#     
+#     m14 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
+#                   mean_tmax_s + adult_mass_s + num_small_s + (1|id), 
+#                 REML = FALSE, data=df_set[[i]])
+#     
+#     m15 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
+#                   mean_fruit_s + adult_mass_s + num_small_s + (1|id), 
+#                 REML = FALSE, data=df_set[[i]])
+#     
+#     m16 <- lmer(log(df_set[[i]][, y_set[j]]) ~ sqrt(nb_reloc) + 
+#                   mean_tmax_s + mean_fruit_s + adult_mass_s +
+#                   num_small_s + (1|id), 
+#                 REML = FALSE, data=df_set[[i]])
     
     # Create model selection table dataframe
     temp <- suppressWarnings(model.sel(list(m1, m2, m3, m4, m5, m6, m7, m8)))
+#     temp <- suppressWarnings(model.sel(list(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16)))
     temp$m_name <- row.names(temp)
     temp$data_set <- rep(df_set_names[i], times = nrow(temp))
     temp$zone <- rep(y_set[j], times = nrow(temp))
@@ -171,10 +203,24 @@ area_model_results$term <-
                     "Fruit biomass", 
                     "Group mass"))
 
+# area_model_results$term <- 
+#   factor(revalue(area_model_results$term, 
+#                  c("adult_mass_s" = "Group mass",
+#                    "num_small_s" = "Num juveniles",
+#                    "mean_fruit_s" = "Fruit biomass",
+#                    "mean_tmax_s" = "Mean max temperature",
+#                    "sqrt(nb_reloc)" = "Sqrt num locations")),
+#          levels = c("Sqrt num locations",
+#                     "Mean max temperature", 
+#                     "Fruit biomass", 
+#                     "Group mass",
+#                     "Num juveniles"))
+
 # ---- plot_area_results --------------------------------------------------
 
 # Exclude half-year
-ggplot(subset(area_model_results, scale != "Half-yearly"), 
+ggplot(subset(area_model_results, scale != "Half-yearly" & 
+                term != "Sqrt num locations"), 
        aes(x = term, color = importance)) + 
   geom_hline(aes(yintercept = 0), lty = 2, color = "gray50") + 
   geom_errorbar(aes(ymax = lower_ci, 
