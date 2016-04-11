@@ -21,4 +21,4 @@ Other files:
 - **HRModels.Rmd**: R markdown file used to generate an HTML report (see below)
 - **BRBMethod.R**: contains a function to batch-apply the biased random bridge home range method in the package adehabitatHR
 
-Full instructions for reproducing the analysis can be found [here](http://www.ucalgary.ca/~facampos/data/homerange/).
+Full instructions for reproducing the analysis can be found [here](http://camposfa.github.io/capuchin-home-ranges.html).
